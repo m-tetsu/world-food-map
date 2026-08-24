@@ -1,4 +1,16 @@
 {
-  "updatedAt": null,
-  "countries": []
+  "updatedAt": "2026-08-24T12:15:24.913Z",
+  "countries": [
+    {
+      "name": "日本",
+      "code": 392,
+      "dishes": [
+        {
+          "name": "ぶどう",
+          "date": "2026-08-24",
+          "memo": "竹原のシャインマスカット"
+        }
+      ]
+    }
+  ]
 }
