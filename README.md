@@ -45,10 +45,11 @@
 ## 記録の追加方法（運用）
 
 1. スマホの Notion アプリで「世界ごはんログ」DBに1行追加（料理名・国・食べた日・写真・メモ）
-2. 新しい国を作った場合、「国」プロパティで select の新規オプションとして追加
-   - あわせて `src/data/countryCodes.mjs` にその国の ISO 3166-1 numeric コードを追記する必要あり（地図の塗り分けに使用。参照: https://en.wikipedia.org/wiki/ISO_3166-1_numeric ）。忘れると一覧には出るが地図には塗られない
-3. 記録が溜まったら GitHub の Actions タブ → "Update food map from Notion" → Run workflow を手動実行
-4. 数十秒でコミットされ、Cloudflare Pagesが自動で再デプロイ
+   - 「国」は地図データ(world-atlas)に含まれる174の国・地域をあらかじめ select の選択肢として登録済み。タップして数文字入力すれば絞り込める（Notionはカテゴリ→国の2段階選択には対応していないため、フリーワード検索できる1段階のselectにしている）
+2. 記録が溜まったら GitHub の Actions タブ → "Update food map from Notion" → Run workflow を手動実行
+3. 数十秒でコミットされ、Cloudflare Pagesが自動で再デプロイ
+
+174ヶ国でカバーしていない国（南極や係争地域など数ヶ国のみ）を追加したくなった場合のみ、Notionのselectに新規オプションを足したうえで `src/data/countryCodes.mjs` に手動でISO 3166-1 numericコードを追記する（`scripts/generate-country-codes.mjs` の元データが対象外の国のため自動生成はできない）。
 
 ## ローカル開発
 
@@ -67,3 +68,4 @@ NOTION_TOKEN=xxx NOTION_DATABASE_ID=xxx npm run fetch-notion
 - Astro（静的サイト生成、ビルド時に世界地図SVGを生成。クライアントJS 0）
 - d3-geo / topojson-client / world-atlas（Natural Earthデータ、パブリックドメイン）
 - @notionhq/client（Notion APIからの取り込みスクリプト用）
+- i18n-iso-countries（`scripts/generate-country-codes.mjs` で国名⇔ISOコード変換に使用。ビルドや通常運用では使わない）
