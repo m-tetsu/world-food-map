@@ -1,0 +1,148 @@
+---
+import { geoPath, geoNaturalEarth1 } from 'd3-geo';
+import { feature } from 'topojson-client';
+import worldTopo from 'world-atlas/countries-110m.json';
+import eatenData from '../data/eaten.json';
+
+const width = 960;
+const height = 500;
+
+const landFeature = feature(worldTopo, worldTopo.objects.countries);
+const projection = geoNaturalEarth1().fitSize([width, height], landFeature);
+const path = geoPath(projection);
+
+const eatenByCode = new Map(
+  eatenData.countries.filter((c) => c.code !== null).map((c) => [Number(c.code), c])
+);
+
+const countryPaths = landFeature.features.map((f) => {
+  const eaten = eatenByCode.get(Number(f.id));
+  return {
+    d: path(f) ?? '',
+    name: f.properties.name,
+    eaten: Boolean(eaten),
+    dishCount: eaten ? eaten.dishes.length : 0,
+  };
+});
+
+const totalCountries = landFeature.features.length;
+const eatenCount = eatenData.countries.filter((c) => c.code !== null).length;
+
+const updatedAtText = eatenData.updatedAt
+  ? new Date(eatenData.updatedAt).toLocaleString('ja-JP', { dateStyle: 'medium', timeStyle: 'short' })
+  : '未更新';
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>世界ごはんマップ</title>
+  </head>
+  <body>
+    <header>
+      <h1>世界ごはんマップ</h1>
+      <p class="stats">{eatenCount} / {totalCountries} カ国 ・ 最終更新: {updatedAtText}</p>
+    </header>
+
+    <main>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="世界地図">
+        {countryPaths.map((c) => (
+          <path d={c.d} class={c.eaten ? 'country eaten' : 'country'}>
+            <title>{c.name}{c.eaten ? `（${c.dishCount}品）` : ''}</title>
+          </path>
+        ))}
+      </svg>
+
+      <section class="list">
+        <h2>食べた国一覧</h2>
+        {eatenData.countries.length === 0 ? (
+          <p class="empty">まだ記録がありません。Notionに追加してGitHub Actionsを実行してください。</p>
+        ) : (
+          <ul>
+            {eatenData.countries.map((c) => (
+              <li>
+                <strong>{c.name}</strong>
+                <span class="dish-count">{c.dishes.length}品</span>
+                <ul class="dishes">
+                  {c.dishes.map((d) => (
+                    <li>{d.name}{d.date ? ` (${d.date})` : ''}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+
+    <style>
+      :root {
+        --eaten: #0f6e63;
+        --base: #e5e0d3;
+        --stroke: #ffffff;
+        --ink: #26221b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+        color: var(--ink);
+        background: #faf8f3;
+      }
+      header {
+        padding: 1.5rem 1rem 0.5rem;
+        text-align: center;
+      }
+      h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+      .stats { margin: 0; color: #6b6459; font-size: 0.9rem; }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .country {
+        fill: var(--base);
+        stroke: var(--stroke);
+        stroke-width: 0.5;
+      }
+      .country.eaten {
+        fill: var(--eaten);
+      }
+      .list {
+        margin-top: 2rem;
+      }
+      .list h2 { font-size: 1.1rem; }
+      .list ul { list-style: none; padding: 0; margin: 0; }
+      .list > ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+      .list > ul > li {
+        background: #fff;
+        border: 1px solid #e5e0d3;
+        border-radius: 8px;
+        padding: 0.75rem;
+      }
+      .dish-count {
+        color: var(--eaten);
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+      }
+      .dishes {
+        margin-top: 0.4rem;
+        font-size: 0.85rem;
+        color: #6b6459;
+      }
+      .dishes li { padding: 0.1rem 0; }
+      .empty { color: #6b6459; }
+    </style>
+  </body>
+</html>
