@@ -1,0 +1,6 @@
+name = "world-food-map"
+compatibility_date = "2026-08-24"
+
+# 完全な静的サイト（Worker本体のコードなし）。dist をそのまま配信する。
+[assets]
+directory = "./dist"
