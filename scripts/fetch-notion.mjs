@@ -61,9 +61,11 @@ await mkdir(photosDir, { recursive: true });
 
 // sharpの標準ビルドはHEIC(iPhoneの既定フォーマット)を直接デコードできないため、
 // 失敗したら heic-convert (純JS/WASM、ネイティブビルド不要) でJPEGに変換してから渡す。
+// 注意: metadata()はHEICでもヘッダーだけ読めて成功してしまうため判定に使えない。
+// 実際にピクセルをデコードする小さなresizeを試し、それが失敗するかどうかで判定する。
 async function ensureSharpDecodable(buffer) {
   try {
-    await sharp(buffer).metadata();
+    await sharp(buffer).resize(16, 16).toBuffer();
     return buffer;
   } catch (err) {
     if (!/heif|unsupported image format/i.test(String(err.message))) throw err;
