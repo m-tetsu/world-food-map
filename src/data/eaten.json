@@ -1,14 +1,21 @@
 {
-  "updatedAt": "2026-11-11T05:08:49.374Z",
+  "updatedAt": "2026-11-11T05:18:03.871Z",
   "countries": [
     {
       "name": "スリランカ",
       "code": 144,
       "dishes": [
         {
+          "name": "スリランカカレー (1)",
+          "date": "2026-11-11",
+          "memo": "いまいちだった",
+          "photo": "/photos/415c3359d2ef803a9b01fae7a8ac4a27.jpg"
+        },
+        {
           "name": "スリランカカレー",
           "date": "2026-11-11",
-          "memo": "いまいちだった"
+          "memo": "いまいちだった",
+          "photo": "/photos/415c3359d2ef800ebd12fda8748560ba.jpg"
         }
       ]
     },
@@ -19,7 +26,8 @@
         {
           "name": "フォー",
           "date": "2026-10-11",
-          "memo": ""
+          "memo": "",
+          "photo": "/photos/3f6c3359d2ef80508a61d50e0121613e.jpg"
         }
       ]
     },
@@ -30,7 +38,14 @@
         {
           "name": "ぶどう",
           "date": "2026-08-24",
-          "memo": "竹原のシャインマスカット"
+          "memo": "竹原のシャインマスカット",
+          "photo": "/photos/3c6c3359d2ef806e81d4c49d55c88971.jpg"
+        },
+        {
+          "name": "テスト",
+          "date": "2026-11-11",
+          "memo": "美味しい",
+          "photo": "/photos/415c3359d2ef8090a8f2f9e6b79115e1.jpg"
         }
       ]
     }
