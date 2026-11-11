@@ -1,7 +1,8 @@
 import { Client } from '@notionhq/client';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import sharp from 'sharp';
 import { COUNTRY_CODES } from '../src/data/countryCodes.mjs';
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
@@ -47,6 +48,33 @@ function getMemo(page) {
   return prop?.rich_text?.map((t) => t.plain_text).join('') ?? '';
 }
 
+// 「写真」プロパティの最初の1枚だけ使う（複数枚ついていても一覧には1枚で十分なため）。
+function getPhotoUrl(page) {
+  const file = page.properties['写真']?.files?.[0];
+  if (!file) return null;
+  return file.file?.url ?? file.external?.url ?? null;
+}
+
+const photosDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../public/photos');
+await mkdir(photosDir, { recursive: true });
+
+// Notionのファイル付きURL（type: "file"）は発行から約1時間で失効するため、
+// 取得した直後にダウンロードしてリポジトリ内に小さいサムネイルとして保存する。
+async function downloadThumbnail(url, pageId) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.warn(`写真のダウンロードに失敗しました（${pageId}）: HTTP ${res.status}`);
+    return null;
+  }
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const fileName = `${pageId.replace(/-/g, '')}.jpg`;
+  await sharp(buffer)
+    .resize(160, 160, { fit: 'cover' })
+    .jpeg({ quality: 65 })
+    .toFile(path.join(photosDir, fileName));
+  return `/photos/${fileName}`;
+}
+
 const pages = await fetchAllPages();
 
 const byCountry = new Map();
@@ -56,10 +84,14 @@ for (const page of pages) {
   const countryName = getCountryName(page);
   if (!countryName) continue;
 
+  const photoUrl = getPhotoUrl(page);
+  const photo = photoUrl ? await downloadThumbnail(photoUrl, page.id) : null;
+
   const dish = {
     name: getTitle(page) || '(無題)',
     date: getDate(page),
     memo: getMemo(page),
+    photo,
   };
 
   if (!byCountry.has(countryName)) {

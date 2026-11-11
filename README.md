@@ -51,6 +51,10 @@
 
 174ヶ国でカバーしていない国（南極や係争地域など数ヶ国のみ）を追加したくなった場合のみ、Notionのselectに新規オプションを足したうえで `src/data/countryCodes.mjs` に手動でISO 3166-1 numericコードを追記する（`scripts/generate-country-codes.mjs` の元データが対象外の国のため自動生成はできない）。
 
+### 写真について
+
+「写真」プロパティに画像を1枚以上添付すると、先頭の1枚だけを取り込み時に160×160にリサイズ（JPEG, quality 65）して `public/photos/` に保存し、一覧に小さいサムネイルとして表示する。Notionのファイル付きURLは発行から約1時間で失効するため、取り込みスクリプト内で取得直後にダウンロードしてリポジトリに保存する方式にしている（サイト側は自前の画像を参照するので失効の影響を受けない）。2枚目以降は現状使われない。
+
 ## ローカル開発
 
 ```bash
@@ -69,3 +73,4 @@ NOTION_TOKEN=xxx NOTION_DATABASE_ID=xxx npm run fetch-notion
 - d3-geo / topojson-client / world-atlas（Natural Earthデータ、パブリックドメイン）
 - @notionhq/client（Notion APIからの取り込みスクリプト用）
 - i18n-iso-countries（`scripts/generate-country-codes.mjs` で国名⇔ISOコード変換に使用。ビルドや通常運用では使わない）
+- sharp（取り込みスクリプトで写真をサムネイルにリサイズするために使用）

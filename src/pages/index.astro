@@ -67,7 +67,10 @@ const updatedAtText = eatenData.updatedAt
                 <span class="dish-count">{c.dishes.length}品</span>
                 <ul class="dishes">
                   {c.dishes.map((d) => (
-                    <li>{d.name}{d.date ? ` (${d.date})` : ''}</li>
+                    <li>
+                      {d.photo && <img src={d.photo} alt={d.name} class="dish-photo" loading="lazy" width="28" height="28" />}
+                      {d.name}{d.date ? ` (${d.date})` : ''}
+                    </li>
                   ))}
                 </ul>
               </li>
@@ -141,7 +144,14 @@ const updatedAtText = eatenData.updatedAt
         font-size: 0.85rem;
         color: #6b6459;
       }
-      .dishes li { padding: 0.1rem 0; }
+      .dishes li { padding: 0.15rem 0; display: flex; align-items: center; gap: 0.4rem; }
+      .dish-photo {
+        width: 28px;
+        height: 28px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
       .empty { color: #6b6459; }
     </style>
   </body>
