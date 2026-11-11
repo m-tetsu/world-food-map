@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T05:28:57.341Z",
+  "updatedAt": "2026-11-11T05:36:26.629Z",
   "countries": [
     {
       "name": "スリランカ",
@@ -9,8 +9,8 @@
           "name": "スリランカカレー",
           "date": "2026-11-11",
           "memo": "いまいちだった",
-          "photo": null,
-          "photoLarge": null
+          "photo": "/photos/415c3359d2ef800ebd12fda8748560ba.jpg",
+          "photoLarge": "/photos/415c3359d2ef800ebd12fda8748560ba-large.jpg"
         }
       ]
     },
@@ -22,8 +22,8 @@
           "name": "フォー",
           "date": "2026-10-11",
           "memo": "",
-          "photo": null,
-          "photoLarge": null
+          "photo": "/photos/3f6c3359d2ef80508a61d50e0121613e.jpg",
+          "photoLarge": "/photos/3f6c3359d2ef80508a61d50e0121613e-large.jpg"
         }
       ]
     },
@@ -35,8 +35,8 @@
           "name": "ぶどう",
           "date": "2026-08-24",
           "memo": "竹原のシャインマスカット",
-          "photo": null,
-          "photoLarge": null
+          "photo": "/photos/3c6c3359d2ef806e81d4c49d55c88971.jpg",
+          "photoLarge": "/photos/3c6c3359d2ef806e81d4c49d55c88971-large.jpg"
         }
       ]
     }
