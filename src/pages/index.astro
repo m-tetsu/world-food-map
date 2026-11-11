@@ -66,12 +66,26 @@ const updatedAtText = eatenData.updatedAt
                 <strong>{c.name}</strong>
                 <span class="dish-count">{c.dishes.length}品</span>
                 <ul class="dishes">
-                  {c.dishes.map((d) => (
-                    <li>
-                      {d.photo && <img src={d.photo} alt={d.name} class="dish-photo" loading="lazy" width="28" height="28" />}
-                      {d.name}{d.date ? ` (${d.date})` : ''}
-                    </li>
-                  ))}
+                  {c.dishes.map((d) => {
+                    const lightboxId = d.photo ? `photo-${d.photo.replace(/[^a-zA-Z0-9]/g, '')}` : null;
+                    return (
+                      <li>
+                        {d.photo && lightboxId && (
+                          <>
+                            <a href={`#${lightboxId}`} class="dish-photo-link" aria-label={`${d.name}の写真を拡大表示`}>
+                              <img src={d.photo} alt={d.name} class="dish-photo" loading="lazy" width="28" height="28" />
+                            </a>
+                            <div id={lightboxId} class="lightbox">
+                              <a href="#" class="lightbox-backdrop" aria-label="閉じる">
+                                <img src={d.photoLarge ?? d.photo} alt={d.name} />
+                              </a>
+                            </div>
+                          </>
+                        )}
+                        {d.name}{d.date ? ` (${d.date})` : ''}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
             ))}
@@ -151,8 +165,38 @@ const updatedAtText = eatenData.updatedAt
         object-fit: cover;
         border-radius: 4px;
         flex-shrink: 0;
+        display: block;
+      }
+      .dish-photo-link {
+        line-height: 0;
       }
       .empty { color: #6b6459; }
+
+      /* クリックで拡大表示（JS不要・CSSの:targetのみで開閉） */
+      .lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+      }
+      .lightbox:target {
+        display: block;
+      }
+      .lightbox-backdrop {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 2rem;
+        background: rgba(20, 18, 14, 0.85);
+      }
+      .lightbox img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 8px;
+        object-fit: contain;
+      }
     </style>
   </body>
 </html>

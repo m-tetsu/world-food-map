@@ -61,18 +61,19 @@ await mkdir(photosDir, { recursive: true });
 
 // sharpの標準ビルドはHEIC(iPhoneの既定フォーマット)を直接デコードできないため、
 // 失敗したら heic-convert (純JS/WASM、ネイティブビルド不要) でJPEGに変換してから渡す。
-async function toResizedJpeg(buffer) {
+async function ensureSharpDecodable(buffer) {
   try {
-    return await sharp(buffer).resize(160, 160, { fit: 'cover' }).jpeg({ quality: 65 }).toBuffer();
+    await sharp(buffer).metadata();
+    return buffer;
   } catch (err) {
     if (!/heif|unsupported image format/i.test(String(err.message))) throw err;
-    const jpegBuffer = Buffer.from(await convertHeic({ buffer, format: 'JPEG', quality: 0.9 }));
-    return sharp(jpegBuffer).resize(160, 160, { fit: 'cover' }).jpeg({ quality: 65 }).toBuffer();
+    return Buffer.from(await convertHeic({ buffer, format: 'JPEG', quality: 0.9 }));
   }
 }
 
 // Notionのファイル付きURL（type: "file"）は発行から約1時間で失効するため、
-// 取得した直後にダウンロードしてリポジトリ内に小さいサムネイルとして保存する。
+// 取得した直後にダウンロードしてリポジトリ内に保存する。一覧用の正方形サムネイルと、
+// クリック時の拡大表示用（アスペクト比そのまま・長辺800px）の2サイズを作る。
 // 1件の写真処理に失敗しても他の記録の更新を止めないよう、呼び出し側で例外を握りつぶす。
 async function downloadThumbnail(url, pageId) {
   const res = await fetch(url);
@@ -80,11 +81,23 @@ async function downloadThumbnail(url, pageId) {
     console.warn(`写真のダウンロードに失敗しました（${pageId}）: HTTP ${res.status}`);
     return null;
   }
-  const buffer = Buffer.from(await res.arrayBuffer());
-  const resized = await toResizedJpeg(buffer);
-  const fileName = `${pageId.replace(/-/g, '')}.jpg`;
-  await writeFile(path.join(photosDir, fileName), resized);
-  return `/photos/${fileName}`;
+  const raw = Buffer.from(await res.arrayBuffer());
+  const decodable = await ensureSharpDecodable(raw);
+
+  const id = pageId.replace(/-/g, '');
+  const thumbName = `${id}.jpg`;
+  const largeName = `${id}-large.jpg`;
+
+  const thumb = await sharp(decodable).resize(160, 160, { fit: 'cover' }).jpeg({ quality: 65 }).toBuffer();
+  await writeFile(path.join(photosDir, thumbName), thumb);
+
+  const large = await sharp(decodable)
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 75 })
+    .toBuffer();
+  await writeFile(path.join(photosDir, largeName), large);
+
+  return { thumb: `/photos/${thumbName}`, large: `/photos/${largeName}` };
 }
 
 const pages = await fetchAllPages();
@@ -97,10 +110,10 @@ for (const page of pages) {
   if (!countryName) continue;
 
   const photoUrl = getPhotoUrl(page);
-  let photo = null;
+  let photos = null;
   if (photoUrl) {
     try {
-      photo = await downloadThumbnail(photoUrl, page.id);
+      photos = await downloadThumbnail(photoUrl, page.id);
     } catch (err) {
       console.warn(`写真の処理に失敗しました（${page.id}）: ${err.message}`);
     }
@@ -110,7 +123,8 @@ for (const page of pages) {
     name: getTitle(page) || '(無題)',
     date: getDate(page),
     memo: getMemo(page),
-    photo,
+    photo: photos?.thumb ?? null,
+    photoLarge: photos?.large ?? null,
   };
 
   if (!byCountry.has(countryName)) {
