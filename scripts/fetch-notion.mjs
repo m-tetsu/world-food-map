@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import sharp from 'sharp';
+import convertHeic from 'heic-convert';
 import { COUNTRY_CODES } from '../src/data/countryCodes.mjs';
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
@@ -58,8 +59,21 @@ function getPhotoUrl(page) {
 const photosDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../public/photos');
 await mkdir(photosDir, { recursive: true });
 
+// sharpの標準ビルドはHEIC(iPhoneの既定フォーマット)を直接デコードできないため、
+// 失敗したら heic-convert (純JS/WASM、ネイティブビルド不要) でJPEGに変換してから渡す。
+async function toResizedJpeg(buffer) {
+  try {
+    return await sharp(buffer).resize(160, 160, { fit: 'cover' }).jpeg({ quality: 65 }).toBuffer();
+  } catch (err) {
+    if (!/heif|unsupported image format/i.test(String(err.message))) throw err;
+    const jpegBuffer = Buffer.from(await convertHeic({ buffer, format: 'JPEG', quality: 0.9 }));
+    return sharp(jpegBuffer).resize(160, 160, { fit: 'cover' }).jpeg({ quality: 65 }).toBuffer();
+  }
+}
+
 // Notionのファイル付きURL（type: "file"）は発行から約1時間で失効するため、
 // 取得した直後にダウンロードしてリポジトリ内に小さいサムネイルとして保存する。
+// 1件の写真処理に失敗しても他の記録の更新を止めないよう、呼び出し側で例外を握りつぶす。
 async function downloadThumbnail(url, pageId) {
   const res = await fetch(url);
   if (!res.ok) {
@@ -67,11 +81,9 @@ async function downloadThumbnail(url, pageId) {
     return null;
   }
   const buffer = Buffer.from(await res.arrayBuffer());
+  const resized = await toResizedJpeg(buffer);
   const fileName = `${pageId.replace(/-/g, '')}.jpg`;
-  await sharp(buffer)
-    .resize(160, 160, { fit: 'cover' })
-    .jpeg({ quality: 65 })
-    .toFile(path.join(photosDir, fileName));
+  await writeFile(path.join(photosDir, fileName), resized);
   return `/photos/${fileName}`;
 }
 
@@ -85,7 +97,14 @@ for (const page of pages) {
   if (!countryName) continue;
 
   const photoUrl = getPhotoUrl(page);
-  const photo = photoUrl ? await downloadThumbnail(photoUrl, page.id) : null;
+  let photo = null;
+  if (photoUrl) {
+    try {
+      photo = await downloadThumbnail(photoUrl, page.id);
+    } catch (err) {
+      console.warn(`写真の処理に失敗しました（${page.id}）: ${err.message}`);
+    }
+  }
 
   const dish = {
     name: getTitle(page) || '(無題)',
